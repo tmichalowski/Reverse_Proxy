@@ -1,0 +1,64 @@
+version: '2'
+
+services:
+  product-service:
+    build: ./products
+    volumes:
+      - ./products:/usr/src/app
+    ports:
+      - "5001:80"
+    networks:
+      exercise6_net:
+       aliases:
+        - product-service
+    depends_on:
+      - db
+
+  website:
+    image: php:apache
+    volumes:
+      - ./website:/var/www/html
+    expose:
+      - "80"
+    networks:
+      exercise6_net:
+    depends_on:
+      - product-service
+   
+
+  db:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: moja_baza
+    networks:
+      exercise6_net:
+       aliases:
+        - db
+ 
+  nginx:
+    image: nginx:latest
+    ports:
+      - 8080:8080
+    volumes:
+      - ./default.conf:/etc/nginx/conf.d/default.conf
+    links:
+      - website
+    networks:
+      exercise6_net:
+    depends_on:
+      - product-service
+      - db
+      - website
+networks:
+  exercise6_net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.16.238.0/24
+        gateway: 172.16.238.1
+
